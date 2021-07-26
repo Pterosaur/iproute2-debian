@@ -260,35 +260,6 @@ static void print_flags(long flags)
 	close_json_array(PRINT_JSON, NULL);
 }
 
-static char *pid_name(pid_t pid)
-{
-	char *comm;
-	FILE *f;
-	int err;
-
-	err = asprintf(&comm, "/proc/%d/comm", pid);
-	if (err < 0)
-		return NULL;
-
-	f = fopen(comm, "r");
-	free(comm);
-	if (!f) {
-		perror("fopen");
-		return NULL;
-	}
-
-	if (fscanf(f, "%ms\n", &comm) != 1) {
-		perror("fscanf");
-		comm = NULL;
-	}
-
-
-	if (fclose(f))
-		perror("fclose");
-
-	return comm;
-}
-
 static void show_processes(const char *name)
 {
 	glob_t globbuf = { };
@@ -346,7 +317,7 @@ static void show_processes(const char *name)
 			} else if (err == 2 &&
 				   !strcmp("iff", key) &&
 				   !strcmp(name, value)) {
-				char *pname = pid_name(pid);
+				char *pname = get_task_name(pid);
 
 				print_string(PRINT_ANY, "name",
 					     "%s", pname ? : "<NULL>");
@@ -541,14 +512,6 @@ static void print_mq(FILE *f, struct rtattr *tb[])
 	}
 }
 
-static void print_onoff(FILE *f, const char *flag, __u8 val)
-{
-	if (is_json_context())
-		print_bool(PRINT_JSON, flag, NULL, !!val);
-	else
-		fprintf(f, "%s %s ", flag, val ? "on" : "off");
-}
-
 static void print_type(FILE *f, __u8 type)
 {
 	SPRINT_BUF(buf);
@@ -573,17 +536,19 @@ static void tun_print_opt(struct link_util *lu, FILE *f, struct rtattr *tb[])
 		print_type(f, rta_getattr_u8(tb[IFLA_TUN_TYPE]));
 
 	if (tb[IFLA_TUN_PI])
-		print_onoff(f, "pi", rta_getattr_u8(tb[IFLA_TUN_PI]));
+		print_on_off(PRINT_ANY, "pi", "pi %s ",
+			     rta_getattr_u8(tb[IFLA_TUN_PI]));
 
 	if (tb[IFLA_TUN_VNET_HDR]) {
-		print_onoff(f, "vnet_hdr",
-			    rta_getattr_u8(tb[IFLA_TUN_VNET_HDR]));
+		print_on_off(PRINT_ANY, "vnet_hdr", "vnet_hdr %s ",
+			     rta_getattr_u8(tb[IFLA_TUN_VNET_HDR]));
 	}
 
 	print_mq(f, tb);
 
 	if (tb[IFLA_TUN_PERSIST])
-		print_onoff(f, "persist", rta_getattr_u8(tb[IFLA_TUN_PERSIST]));
+		print_on_off(PRINT_ANY, "persist", "persist %s ",
+			     rta_getattr_u8(tb[IFLA_TUN_PERSIST]));
 
 	if (tb[IFLA_TUN_OWNER])
 		print_owner(f, rta_getattr_u32(tb[IFLA_TUN_OWNER]));

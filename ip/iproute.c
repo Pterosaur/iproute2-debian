@@ -362,6 +362,8 @@ void print_rt_flags(FILE *fp, unsigned int flags)
 		print_string(PRINT_ANY, NULL, "%s ", "pervasive");
 	if (flags & RTNH_F_OFFLOAD)
 		print_string(PRINT_ANY, NULL, "%s ", "offload");
+	if (flags & RTNH_F_TRAP)
+		print_string(PRINT_ANY, NULL, "%s ", "trap");
 	if (flags & RTM_F_NOTIFY)
 		print_string(PRINT_ANY, NULL, "%s ", "notify");
 	if (flags & RTNH_F_LINKDOWN)
@@ -372,6 +374,8 @@ void print_rt_flags(FILE *fp, unsigned int flags)
 		print_string(PRINT_ANY, NULL, "%s ", "rt_offload");
 	if (flags & RTM_F_TRAP)
 		print_string(PRINT_ANY, NULL, "%s ", "rt_trap");
+	if (flags & RTM_F_OFFLOAD_FAILED)
+		print_string(PRINT_ANY, NULL, "%s ", "rt_offload_failed");
 
 	close_json_array(PRINT_JSON, NULL);
 }
@@ -792,9 +796,10 @@ int print_route(struct nlmsghdr *n, void *arg)
 				 "%s/%u", rt_addr_n2a_rta(family, tb[RTA_DST]),
 				 r->rtm_dst_len);
 		} else {
-			format_host_rta_r(family, tb[RTA_DST],
+			const char *hostname = format_host_rta_r(family, tb[RTA_DST],
 					  b1, sizeof(b1));
-
+			if (hostname)
+				strncpy(b1, hostname, sizeof(b1) - 1);
 		}
 	} else if (r->rtm_dst_len) {
 		snprintf(b1, sizeof(b1), "0/%d ", r->rtm_dst_len);
@@ -814,8 +819,10 @@ int print_route(struct nlmsghdr *n, void *arg)
 				 rt_addr_n2a_rta(family, tb[RTA_SRC]),
 				 r->rtm_src_len);
 		} else {
-			format_host_rta_r(family, tb[RTA_SRC],
+			const char *hostname = format_host_rta_r(family, tb[RTA_SRC],
 					  b1, sizeof(b1));
+			if (hostname)
+				strncpy(b1, hostname, sizeof(b1) - 1);
 		}
 		print_color_string(PRINT_ANY, color,
 				   "from", "from %s ", b1);
@@ -2067,7 +2074,18 @@ static int iproute_get(int argc, char **argv)
 			if (addr.bytelen)
 				addattr_l(&req.n, sizeof(req),
 					  RTA_DST, &addr.data, addr.bytelen);
-			req.r.rtm_dst_len = addr.bitlen;
+			if (req.r.rtm_family == AF_INET && addr.bitlen != 32) {
+				fprintf(stderr,
+					"Warning: /%u as prefix is invalid, only /32 (or none) is supported.\n",
+					addr.bitlen);
+				req.r.rtm_dst_len = 32;
+			} else if (req.r.rtm_family == AF_INET6 && addr.bitlen != 128) {
+				fprintf(stderr,
+					"Warning: /%u as prefix is invalid, only /128 (or none) is supported.\n",
+					addr.bitlen);
+				req.r.rtm_dst_len = 128;
+			} else
+				req.r.rtm_dst_len = addr.bitlen;
 			address_found = true;
 		}
 		argc--; argv++;
