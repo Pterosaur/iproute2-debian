@@ -1,3 +1,12 @@
+iproute2 (5.13.0-1) experimental; urgency=medium
+
+  * Update upstream source from tag 'upstream/5.13.0'
+    (Closes: #991465)
+  * Drop patches merged upstream
+  * Install new dcb and vdpa tools
+
+ -- Luca Boccassi <bluca@debian.org>  Mon, 26 Jul 2021 10:56:50 +0100
+
 iproute2 (5.10.0-4) unstable; urgency=medium
 
   * Backport 0012-iproute-force-rtm_dst_len-to-32-128.patch to fix ip
