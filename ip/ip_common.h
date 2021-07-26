@@ -6,6 +6,8 @@
 
 #include "json_print.h"
 
+extern int use_iec;
+
 struct link_filter {
 	int ifindex;
 	int family;
@@ -27,6 +29,8 @@ struct link_filter {
 	int target_nsid;
 };
 
+const char *get_ip_lib_dir(void);
+
 int get_operstate(const char *name);
 int print_linkinfo(struct nlmsghdr *n, void *arg);
 int print_addrinfo(struct nlmsghdr *n, void *arg);
@@ -35,6 +39,7 @@ int print_neigh(struct nlmsghdr *n, void *arg);
 int ipaddr_list_link(int argc, char **argv);
 void ipaddr_get_vf_rate(int, int *, int *, const char *);
 void iplink_usage(void) __attribute__((noreturn));
+void iplink_types_usage(void);
 
 void iproute_reset_filter(int ifindex);
 void ipmroute_reset_filter(int ifindex);
@@ -49,6 +54,7 @@ int print_rule(struct nlmsghdr *n, void *arg);
 int print_netconf(struct rtnl_ctrl_data *ctrl,
 		  struct nlmsghdr *n, void *arg);
 int print_nexthop(struct nlmsghdr *n, void *arg);
+int print_nexthop_bucket(struct nlmsghdr *n, void *arg);
 void netns_map_init(void);
 void netns_nsid_socket_init(void);
 int print_nsid(struct nlmsghdr *n, void *arg);
