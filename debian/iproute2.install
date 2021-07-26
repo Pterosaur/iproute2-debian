@@ -2,6 +2,7 @@ etc/
 usr/include/iproute2/
 sbin/arpd /usr/sbin
 sbin/bridge
+sbin/dcb
 sbin/devlink
 sbin/genl /usr/sbin
 sbin/ip /bin
@@ -15,6 +16,7 @@ sbin/rtmon
 sbin/ss /bin
 sbin/tc
 sbin/tipc
+sbin/vdpa
 usr/lib/tc/
 usr/share/bash-completion/
 usr/share/man/
